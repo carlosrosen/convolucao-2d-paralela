@@ -1,0 +1,6 @@
+build/
+*.o
+*.out
+gmon.out
+callgrind.out.*
+.vscode/

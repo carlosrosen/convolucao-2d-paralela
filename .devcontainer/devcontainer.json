@@ -1,0 +1,15 @@
+{
+  "name": "Projeto Convolução 2D - Programação Paralela",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "pp-lab",
+  "workspaceFolder": "/lab",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack"
+      ]
+    }
+  },
+  "remoteUser": "root"
+}

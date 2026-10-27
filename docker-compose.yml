@@ -1,0 +1,10 @@
+services:
+  pp-lab:
+    build: .
+    image: iesb/pp-lab:2026.2
+    container_name: pp-lab
+    working_dir: /lab
+    volumes:
+      - .:/lab
+    stdin_open: true
+    tty: true

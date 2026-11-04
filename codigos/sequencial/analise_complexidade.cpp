@@ -3,8 +3,8 @@
  * Aspecto interessante: decomposicao de dominio 2D; tratamento de bordas
  * (halo) quando paralelizado em MPI.
  *
- * Compilar: g++ -O2 -o 04_convolucao 04_convolucao.cpp
- * Executar: ./04_convolucao 2000 30   (lado da imagem; num. de passes)
+ * Compilar: g++ -O2 -o analise_complexidade analise_complexidade.cpp
+ * Executar: ./analise_complexidade 2000 30   (lado da imagem; num. de passes)
  */
 
 #include <cstdio> // O(1)  

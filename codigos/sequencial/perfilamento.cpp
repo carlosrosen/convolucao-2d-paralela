@@ -3,7 +3,7 @@
  * Aspecto interessante: decomposicao de dominio 2D; tratamento de bordas
  * (halo) quando paralelizado em MPI.
  *
- * Compilar: g++ -O2 -o perfilamento 04_convolucao.cpp
+ * Compilar: g++ -O2 -o perfilamento perfilamento.cpp
  * Executar: ./perfilamento 2000 30   (lado da imagem; num. de passes)
  */
 
@@ -19,11 +19,11 @@ static double agora() {
 }
 
 int main(int argc, char** argv) {
-    // inicio da medicao do tempo total
-    double t_total0 = agora();
-
     int N = (argc > 1) ? atoi(argv[1]) : 2000;
     int P = (argc > 2) ? atoi(argv[2]) : 30;
+
+    // inicio da medicao do tempo do algoritmo
+    double t_total0 = agora();
 
     // tempo de alocacao e zeragem dos dois buffers
     double t_aloc0 = agora();
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
     for (int i = 0; i < N*N; i++) soma += a[i];
     double t_check1 = agora();
 
-    // fim da medicao do tempo total
+    // fim da medicao do tempo do algoritmo
     double t_total1 = agora();
 
     // tempos de cada bloco
@@ -78,18 +78,44 @@ int main(int argc, char** argv) {
     double p_outros = (t_total > 0) ? 100.0 * outros  / t_total : 0.0;
 
     // saida no mesmo formato do baseline, para comparacao direta
-    printf("N=%d passes=%d  checksum=%.2f  tempo=%.6f s\n", N, P, soma, t_conv);
+    printf("N=%d passes=%d  checksum=%.2f  tempo=%.6f s", N, P, soma, t_conv);
 
-    // tabela de perfilamento
-    printf("\nPerfilamento (N=%d, P=%d):\n", N, P);
+    // identifica o bloco que concentra o maior tempo
+    int hotspot = 0;  // 0=alocacao, 1=init, 2=convolucao, 3=checksum
+    double t_hotspot = t_aloc;
+    double p_hotspot = p_aloc;
+    const char* nome_hotspot = "Alocacao";
+
+    if (t_init > t_hotspot) {
+        hotspot = 1; 
+        t_hotspot = t_init; 
+        p_hotspot = p_init; 
+        nome_hotspot = "Inicializacao";
+    }
+    if (t_conv > t_hotspot) {
+        hotspot = 2; 
+        t_hotspot = t_conv; 
+        p_hotspot = p_conv; 
+        nome_hotspot = "Convolucao";
+    }
+    if (t_check > t_hotspot) {
+        hotspot = 3; 
+        t_hotspot = t_check; 
+        p_hotspot = p_check; 
+        nome_hotspot = "Checksum";
+    }
+
+    // tabela de perfilamento, com o hotspot marcado
+    printf("\nTabela de Perfilamento:\n");
     printf("%-22s %14s %10s\n", "Bloco", "Tempo (s)", "%");
-    printf("%-22s %14.9f %9.2f%%\n", "Alocacao/zeragem", t_aloc,  p_aloc);
-    printf("%-22s %14.9f %9.2f%%\n", "Inicializacao",    t_init,  p_init);
-    printf("%-22s %14.9f %9.2f%%\n", "Convolucao",       t_conv,  p_conv);
-    printf("%-22s %14.9f %9.2f%%\n", "Checksum",         t_check, p_check);
-    printf("%-22s %14.9f %9.2f%%\n", "Outros",           outros,  p_outros);
-    printf("%-22s %14.9f %9.2f%%\n", "Total",            t_total, 100.0);
-    printf("\nSoma dos blocos = %.9f s | Total = %.9f s | Diferenca = %.9f s\n",t_aloc + t_init + t_conv + t_check, t_total, outros);
+    printf("%-22s %14.9f %9.2f%%%s\n", "Alocacao", t_aloc,  p_aloc,  hotspot == 0 ? "  <-- hotspot" : "");
+    printf("%-22s %14.9f %9.2f%%%s\n", "Inicializacao", t_init,  p_init,  hotspot == 1 ? "  <-- hotspot" : "");
+    printf("%-22s %14.9f %9.2f%%%s\n", "Convolucao", t_conv,  p_conv,  hotspot == 2 ? "  <-- hotspot" : "");
+    printf("%-22s %14.9f %9.2f%%%s\n", "Checksum", t_check, p_check, hotspot == 3 ? "  <-- hotspot" : "");
+    printf("%-22s %14.9f %9.2f%%\n", "Outros", outros,  p_outros);
+    printf("%-22s %14.9f %9.2f%%\n", "Total", t_total, 100.0);
+    printf("\nHotspot: %s (%.9f s, %.2f%% do total)\n", nome_hotspot, t_hotspot, p_hotspot);
+    printf("Soma dos blocos = %.9f s | Total = %.9f s | Diferenca = %.9f s\n",t_aloc + t_init + t_conv + t_check, t_total, outros);
 
     return 0;
 }

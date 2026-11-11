@@ -3,13 +3,15 @@
  * Aspecto interessante: decomposicao de dominio 2D; tratamento de bordas
  * (halo) quando paralelizado em MPI.
  *
- * Compilar: g++ -O2 -o 04_convolucao 04_convolucao.cpp
- * Executar: ./04_convolucao 2000 30   (lado da imagem; num. de passes)
+ * Compilar: g++ -O2 -fopenmp convolucaoOPM.cpp -o convolucaoOPM
+ * Executar: OMP_NUM_THREADS=4 ./convolucaoOPM 2000 30 static
+ * Argumentos: lado da imagem, passes e política (static, dynamic ou guided).
  */
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
 #include <ctime>
+#include <string>
 #include <omp.h>
 
 using namespace std;
@@ -20,6 +22,35 @@ static double agora() {
 }
 
 int main(int argc, char** argv) {
+
+    int N = (argc > 1) ? atoi(argv[1]) : 2000;
+    int P = (argc > 2) ? atoi(argv[2]) : 30;
+    string escalonamento = (argc > 3) ? argv[3] : "static";
+    bool mostrar_threads = (argc > 4) && string(argv[4]) == "--verbose";
+
+    omp_sched_t politica;
+    int tamanho_bloco;
+
+    if (escalonamento == "static") {
+        politica = omp_sched_static;
+        tamanho_bloco = 0; // divisão estática padrão do runtime
+    } else if (escalonamento == "dynamic") {
+        politica = omp_sched_dynamic;
+        // Blocos evitam uma requisição ao runtime para cada pixel.
+        tamanho_bloco = 64;
+    } else if (escalonamento == "guided") {
+        politica = omp_sched_guided;
+        tamanho_bloco = 64;
+    } else {
+        fprintf(stderr,
+                "Escalonamento invalido: %s. Use static, dynamic ou guided.\n",
+                escalonamento.c_str());
+        return 1;
+    }
+
+    // Garante que o runtime respeite a quantidade solicitada em OMP_NUM_THREADS.
+    omp_set_dynamic(0);
+    omp_set_schedule(politica, tamanho_bloco);
 
     /*----------------------------------------------------------------------*/
 
@@ -70,16 +101,16 @@ int main(int argc, char** argv) {
             printf("Threads efetivamente usadas: %d\n", threads_usadas);
         }
 
-        // Impressão ordenada das threads
+        // A impressão por ID é opcional para não poluir os testes de desempenho.
+        if (mostrar_threads) {
+            for (int vez = 0; vez < total; ++vez) {
 
-        for (int vez = 0; vez < total; ++vez) {
+                // Sincroniza as threads para manter a impressão em ordem por ID.
+                #pragma omp barrier
 
-            // Sincroniza as threads para manter a impressão em ordem por ID.
-
-            #pragma omp barrier
-
-            if (id == vez) {
-                printf("Thread ativa: %d\n", id);
+                if (id == vez) {
+                    printf("Thread ativa: %d\n", id);
+                }
             }
         }
     }   
@@ -89,13 +120,6 @@ int main(int argc, char** argv) {
     //Inicialização de variáveis e alocação de memória para as imagens
 
     /*----------------------------------------------------------------------*/
-
-    /*
-        N = Largira e altura da imagem
-        P = Quantidade de passes do filtro
-    */
-    int N = (argc > 1) ? atoi(argv[1]) : 2000;
-    int P = (argc > 2) ? atoi(argv[2]) : 30;
 
     /*
         a = Imagem de entrada
@@ -139,7 +163,11 @@ int main(int argc, char** argv) {
             ociosa enquanto outra ainda está processando.
         */
 
-        #pragma omp parallel for collapse(2) schedule(static)
+        /*
+            schedule(runtime) permite comparar static, dynamic e guided sem
+            recompilar. A política foi escolhida com omp_set_schedule().
+        */
+        #pragma omp parallel for collapse(2) schedule(runtime)
 
         /*
             Percorre então os pixels internos.
@@ -231,6 +259,9 @@ int main(int argc, char** argv) {
         e o tempo total de execução do programa.
     */
 
-    printf("N=%d passes=%d  checksum=%.2f  tempo=%.6f s\n", N, P, soma, t1 - t0);
+    printf("versao=openmp schedule=%s chunk=%d threads=%d N=%d passes=%d "
+           "checksum=%.2f tempo=%.9f s\n",
+           escalonamento.c_str(), tamanho_bloco, threads_usadas,
+           N, P, soma, t1 - t0);
     return 0;
 }

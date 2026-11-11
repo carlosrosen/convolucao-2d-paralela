@@ -8,6 +8,8 @@ callgrind.out.*
 # Código sequencial original mantido apenas como referência local
 /codigos/openmp/convolucaoriginal.cpp
 /codigos/openmp/convolucaoOPM
+/codigos/openmp/convolucao_openmp
 
 # Logs individuais são regenerados pelos scripts de medição
 /resultados/brutos/
+/resultados/imagens/*.pgm

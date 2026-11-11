@@ -1,0 +1,4 @@
+politica,threads,passes,tamanho,tempo_s,checksum,saida_identica,arquivo
+static,4,10,512,0.005010,96313425.44,sim,resultados/imagens/static_t4.png
+dynamic,4,10,512,0.006254,96313425.44,sim,resultados/imagens/dynamic_t4.png
+guided,4,10,512,0.005057,96313425.44,sim,resultados/imagens/guided_t4.png

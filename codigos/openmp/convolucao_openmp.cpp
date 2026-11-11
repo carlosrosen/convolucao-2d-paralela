@@ -3,12 +3,16 @@
  * Aspecto interessante: decomposicao de dominio 2D; tratamento de bordas
  * (halo) quando paralelizado em MPI.
  *
- * Compilar: g++ -O2 -fopenmp convolucaoOPM.cpp -o convolucaoOPM
- * Executar: OMP_NUM_THREADS=4 ./convolucaoOPM 2000 30 static
+ * Compilar: g++ -O2 -fopenmp convolucao_openmp.cpp -o convolucao_openmp
+ * Executar: OMP_NUM_THREADS=4 ./convolucao_openmp 2000 30 static
  * Argumentos: lado da imagem, passes e política (static, dynamic ou guided).
+ * Imagem: use --input entrada.pgm --output saida.pgm depois dos argumentos.
  */
 #include <cstdio>
 #include <cstdlib>
+#include <fstream>
+#include <limits>
+#include <stdexcept>
 #include <vector>
 #include <ctime>
 #include <string>
@@ -21,12 +25,76 @@ static double agora() {
     return t.tv_sec + t.tv_nsec * 1e-9;
 }
 
+static string ler_token(ifstream& arquivo) {
+    string token;
+    while (arquivo >> token) {
+        if (!token.empty() && token[0] == '#') {
+            arquivo.ignore(numeric_limits<streamsize>::max(), '\n');
+            continue;
+        }
+        return token;
+    }
+    throw runtime_error("arquivo PGM incompleto");
+}
+
+static void carregar_pgm(const string& caminho, vector<float>& imagem, int& N) {
+    ifstream arquivo(caminho, ios::binary);
+    if (!arquivo) throw runtime_error("nao foi possivel abrir " + caminho);
+    if (ler_token(arquivo) != "P5") throw runtime_error("a entrada deve ser PGM binario (P5)");
+
+    int largura = stoi(ler_token(arquivo));
+    int altura = stoi(ler_token(arquivo));
+    int maximo = stoi(ler_token(arquivo));
+    if (largura <= 0 || altura <= 0 || largura != altura)
+        throw runtime_error("a imagem PGM deve ser quadrada");
+    if (maximo <= 0 || maximo > 255)
+        throw runtime_error("o PGM deve usar valores de 8 bits");
+
+    arquivo.get();
+    vector<unsigned char> pixels(static_cast<size_t>(largura) * altura);
+    arquivo.read(reinterpret_cast<char*>(pixels.data()), pixels.size());
+    if (arquivo.gcount() != static_cast<streamsize>(pixels.size()))
+        throw runtime_error("dados insuficientes no arquivo PGM");
+
+    N = largura;
+    imagem.resize(pixels.size());
+    for (size_t i = 0; i < pixels.size(); ++i) imagem[i] = pixels[i];
+}
+
+static void salvar_pgm(const string& caminho, const vector<float>& imagem, int N) {
+    ofstream arquivo(caminho, ios::binary);
+    if (!arquivo) throw runtime_error("nao foi possivel criar " + caminho);
+    arquivo << "P5\n" << N << ' ' << N << "\n255\n";
+    for (float valor : imagem) {
+        if (valor < 0.0f) valor = 0.0f;
+        if (valor > 255.0f) valor = 255.0f;
+        unsigned char pixel = static_cast<unsigned char>(valor + 0.5f);
+        arquivo.write(reinterpret_cast<const char*>(&pixel), 1);
+    }
+}
+
 int main(int argc, char** argv) {
 
     int N = (argc > 1) ? atoi(argv[1]) : 2000;
     int P = (argc > 2) ? atoi(argv[2]) : 30;
     string escalonamento = (argc > 3) ? argv[3] : "static";
-    bool mostrar_threads = (argc > 4) && string(argv[4]) == "--verbose";
+    bool mostrar_threads = false;
+    string entrada;
+    string saida;
+
+    for (int i = 4; i < argc; ++i) {
+        string argumento = argv[i];
+        if (argumento == "--verbose") {
+            mostrar_threads = true;
+        } else if (argumento == "--input" && i + 1 < argc) {
+            entrada = argv[++i];
+        } else if (argumento == "--output" && i + 1 < argc) {
+            saida = argv[++i];
+        } else {
+            fprintf(stderr, "Argumento invalido: %s\n", argumento.c_str());
+            return 1;
+        }
+    }
 
     omp_sched_t politica;
     int tamanho_bloco;
@@ -125,14 +193,27 @@ int main(int argc, char** argv) {
         a = Imagem de entrada
         b = Imagem que recebe o resultado do filtro
     */
-    vector<float> a(N*N), b(N*N);
+    vector<float> a;
+
+    try {
+        if (!entrada.empty()) {
+            carregar_pgm(entrada, a, N);
+        } else {
+            a.resize(static_cast<size_t>(N) * N);
+        }
+    } catch (const exception& erro) {
+        fprintf(stderr, "Erro: %s\n", erro.what());
+        return 1;
+    }
+    vector<float> b = a;
 
 
     /*
         Aqui ocorre a paralelização da inicialização da imagem de entrada.
     */
     
-    #pragma omp parallel for schedule(static)
+    if (entrada.empty()) {
+        #pragma omp parallel for schedule(static)
 
         /*
         Cada pixel recebe um valor entre 0 e 255.
@@ -143,6 +224,7 @@ int main(int argc, char** argv) {
         for (int i = 0; i < N * N; ++i) {
             a[i] = static_cast<float>((i * 131) % 256);
         }
+    }
 
     double t0 = agora();
 
@@ -252,6 +334,15 @@ int main(int argc, char** argv) {
         for (int i = 0; i < N * N; ++i) {
             soma += a[i];
         }
+
+    if (!saida.empty()) {
+        try {
+            salvar_pgm(saida, a, N);
+        } catch (const exception& erro) {
+            fprintf(stderr, "Erro: %s\n", erro.what());
+            return 1;
+        }
+    }
 
     /*
         Aqui é impresso o resultado final do filtro, 

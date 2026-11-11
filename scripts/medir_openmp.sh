@@ -22,7 +22,7 @@ if ((N < 3 || N > 4048 || P < 1 || REPS < 1 || WARM < 0)); then
 fi
 
 SRC_SEQ="codigos/sequencial/04_convolucao.cpp"
-SRC_OMP="codigos/openmp/convolucaoOPM.cpp"
+SRC_OMP="codigos/openmp/convolucao_openmp.cpp"
 BIN_SEQ="build/convolucao_sequencial"
 BIN_OMP="build/convolucao_openmp"
 CSV="resultados/csv/openmp_medicoes.csv"

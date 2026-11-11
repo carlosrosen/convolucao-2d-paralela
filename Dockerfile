@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libopenmpi-dev \
         python3 \
         python3-pip \
+        python3-pil \
         time \
         nano \
         less \

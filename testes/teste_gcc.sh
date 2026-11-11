@@ -3,9 +3,9 @@
 set -euo pipefail
 
 raiz_projeto="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-fonte="$raiz_projeto/codigos/openmp/convolucaoOPM.cpp"
+fonte="$raiz_projeto/codigos/openmp/convolucao_openmp.cpp"
 diretorio_temporario="$(mktemp -d)"
-executavel="$diretorio_temporario/convolucaoOPM"
+executavel="$diretorio_temporario/convolucao_openmp"
 
 trap 'rm -rf "$diretorio_temporario"' EXIT
 

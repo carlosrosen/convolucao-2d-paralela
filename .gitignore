@@ -4,3 +4,6 @@ build/
 gmon.out
 callgrind.out.*
 .vscode/
+
+# Código sequencial original mantido apenas como referência local
+/codigos/openmp/convolucaoriginal.cpp

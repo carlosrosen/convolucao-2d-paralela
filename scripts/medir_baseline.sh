@@ -17,6 +17,10 @@
 # Saidas:
 #   resultados/brutos/baseline_N*_P30_*.txt  (logs brutos)
 #   resultados/csv/baseline_sequencial.csv   (uma linha por execucao)
+#   resultados/csv/baseline_resumo.csv       (estatisticas)
+#   resultados/csv/amdahl.csv                (Lei de Amdahl)
+#   resultados/graficos/baseline_tempo.png
+#   resultados/graficos/amdahl.png
 
 set -euo pipefail
 # -e aborta se qualquer comando falhar
@@ -106,7 +110,7 @@ for N in "${SIZES[@]}"; do
 
         # O checksum deve ser idêntico entre as execuções do mesmo N.
         if [[ -z "$CHECKSUM_REF" ]]; then
-            CHECKSUM_REF="$CHECKSUM"        # primeira execução: guarda a referência
+            CHECKSUM_REF="$CHECKSUM"       
         elif [[ "$CHECKSUM" != "$CHECKSUM_REF" ]]; then
             echo "Erro: checksum mudou em N=$N (rep $r): $CHECKSUM != $CHECKSUM_REF" >&2
             exit 1
@@ -123,4 +127,15 @@ done
 # Encerramento e resumo
 echo
 echo "Logs brutos: $DIR_BRUTOS/"
-echo "CSV:         $CSV"
+echo "Baseline (CSV):         $CSV"
+
+# Gera o resumo e o Amdahl somente se pandas/matplotlib estiverem disponiveis.
+if command -v python3 >/dev/null 2>&1 && python3 -c "import pandas, matplotlib" >/dev/null 2>&1; then
+    python3 scripts/resumir_baseline.py "$CSV" "$RESUMO"
+    python3 scripts/amdahl.py "$RESUMO"
+    echo "Estatistica (CSV):      $RESUMO"
+    echo "Lei de Amdahl (CSV):      resultados/csv/amdahl.csv"
+else
+    echo
+    echo "Aviso: pandas/matplotlib indisponiveis; Estatistica e Amdahl nao foram gerados."
+fi

@@ -3,6 +3,8 @@
  * Aspecto interessante: decomposicao de dominio 2D; tratamento de bordas
  * (halo) quando paralelizado em MPI.
  *
+ * Código modificado e analisado por: Carlos Eduardo Roseno Paiva
+ * 
  * Compilar: g++ -O2 -o analise_complexidade analise_complexidade.cpp
  * Executar: ./analise_complexidade 2000 30   (lado da imagem; num. de passes)
  */

@@ -2,6 +2,8 @@
  * IESB 2026/2 — CCO085 — Prof. Rodrigo Goncalves Pinto
  * Aspecto interessante: decomposicao de dominio 2D; tratamento de bordas
  * (halo) quando paralelizado em MPI.
+ * 
+ * Código modificado e analisado por: Carlos Eduardo Roseno Paiva
  *
  * Compilar: g++ -O2 -o perfilamento perfilamento.cpp
  * Executar: ./perfilamento 2000 30   (lado da imagem; num. de passes)

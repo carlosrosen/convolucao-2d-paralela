@@ -1,15 +1,34 @@
+# Build e binarios
 build/
 *.o
+*.obj
+*.exe
 *.out
 gmon.out
+perf.data*
 callgrind.out.*
+
 .vscode/
 
 # Código sequencial original mantido apenas como referência local
 /codigos/openmp/convolucaoriginal.cpp
 /codigos/openmp/convolucaoOPM
 /codigos/openmp/convolucao_openmp
+cachegrind.out.*
+vgcore.*
 
-# Logs individuais são regenerados pelos scripts de medição
-/resultados/brutos/
-/resultados/imagens/*.pgm
+# Binarios gerados manualmente dentro de codigos/
+codigos/**/perfilamento
+codigos/**/04_convolucao
+codigos/**/analise_complexidade
+codigos/**/convolucao_estudo
+
+# Resultados de medicao gerados localmente
+resultados/
+
+# Editor e sistema
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+

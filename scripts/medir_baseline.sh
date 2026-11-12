@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Mede o tempo do codigo sequencial para varios tamanhos de N,
 # sempre com P fixo, e grava os resultados em CSV.
 #
@@ -11,7 +12,7 @@
 # N <= 4048. 
 # Acima disso, i*131 estoura int na inicialização do vetor a (comportamento indefinido). 
 #
-# Uso (a partir da raiz do projeto): 
+# Uso (de qualquer diretorio): 
 #   bash scripts/medir_baseline.sh
 #
 # Saidas:
@@ -27,9 +28,12 @@ set -euo pipefail
 # -u aborta se uma variavel nao definida for usada
 # -o pipefail  um erro em qualquer parte do pipe faz o pipe falhar
 
+# garante que o script rode a partir da raiz do projeto,
+# independente do diretorio de onde foi chamado.
+cd "$(dirname "$0")/.."
+
 # Caminhos de compilação
-BIN=build/perfilamento                     # binario gerado 
-SRC=codigos/sequencial/perfilamento.cpp    # código utilizado
+BIN=build/sequencial/perfilamento            # binario gerado pelo Makefile
 
 # Caminhos de saida
 DIR_BRUTOS=resultados/brutos               # logs completos de cada execução
@@ -47,9 +51,9 @@ SIZES=(1000 2000 3000 4000)                 # lados da imagem (N) testados
 # -p cria os diretorios se nao existirem e nao reclama se ja existirem
 mkdir -p build "$DIR_BRUTOS" resultados/csv
 
-#Compilacao
-echo "Compilando $SRC..."
-g++ -O2 -Wall -o "$BIN" "$SRC"
+# Compilacao via Makefile
+echo "Compilando $BIN com make..."
+make -s "$BIN"
 
 
 # Afinidade de CPU

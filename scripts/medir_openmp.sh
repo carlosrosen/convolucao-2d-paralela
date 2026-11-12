@@ -21,17 +21,14 @@ if ((N < 3 || N > 4048 || P < 1 || REPS < 1 || WARM < 0)); then
     exit 1
 fi
 
-SRC_SEQ="codigos/sequencial/04_convolucao.cpp"
-SRC_OMP="codigos/openmp/convolucao_openmp.cpp"
-BIN_SEQ="build/convolucao_sequencial"
-BIN_OMP="build/convolucao_openmp"
+BIN_SEQ="build/sequencial/04_convolucao"
+BIN_OMP="build/openmp/convolucao_openmp"
 CSV="resultados/csv/openmp_medicoes.csv"
 
 mkdir -p build resultados/csv resultados/graficos resultados/brutos
 
-echo "Compilando baseline e OpenMP..."
-g++ -O2 -Wall -Wextra "$SRC_SEQ" -o "$BIN_SEQ"
-g++ -O2 -Wall -Wextra -fopenmp "$SRC_OMP" -o "$BIN_OMP"
+echo "Compilando baseline e OpenMP com make..."
+make -s "$BIN_SEQ" "$BIN_OMP"
 
 extrair() {
     local chave="$1"

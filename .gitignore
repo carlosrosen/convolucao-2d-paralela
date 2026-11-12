@@ -24,7 +24,8 @@ codigos/**/analise_complexidade
 codigos/**/convolucao_estudo
 
 # Resultados de medicao gerados localmente
-resultados/
+resultados/*
+!resultados/.gitkeep
 
 # Editor e sistema
 .vscode/

@@ -7,6 +7,13 @@ build/
 gmon.out
 perf.data*
 callgrind.out.*
+
+.vscode/
+
+# Código sequencial original mantido apenas como referência local
+/codigos/openmp/convolucaoriginal.cpp
+/codigos/openmp/convolucaoOPM
+/codigos/openmp/convolucao_openmp
 cachegrind.out.*
 vgcore.*
 
@@ -24,3 +31,4 @@ resultados/
 .idea/
 Thumbs.db
 desktop.ini
+

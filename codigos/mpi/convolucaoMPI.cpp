@@ -8,7 +8,7 @@
  */
 
 /*
-  Versão 2.0 com implementação da decomosição de domínio com halo utilizando o formato de grade
+  Versão 2.1 com implementação da decomosição de domínio com halo utilizando o formato de grade
 */
 
 #include <cstdio>
@@ -100,10 +100,12 @@ int main(int argc, char **argv) {
   int lx_end = (start_x + colunas_locais == N) ? colunas_locais - 1 : colunas_locais;
 
   MPI_Barrier(cart_comm); // espera todos os nodes chegarem a esse ponto
+  double tempo_comm = 0;
   double t0 = MPI_Wtime();
 
   for (int p = 0; p < P; p++) {
     // 1. Troca de halos verticais (Norte / Sul) — linhas contiguas
+    double inicio_tempo_comunicacao = MPI_Wtime();
     MPI_Sendrecv(&a[1 * largura_com_halo + 1], colunas_locais, MPI_FLOAT, north, 0,
                  &a[(linhas_locais + 1) * largura_com_halo + 1], colunas_locais, MPI_FLOAT, south, 0,
                  cart_comm, MPI_STATUS_IGNORE);
@@ -121,6 +123,7 @@ int main(int argc, char **argv) {
     MPI_Sendrecv(&a[0 * largura_com_halo + colunas_locais], 1, col_type, east, 3,
                  &a[0 * largura_com_halo + 0], 1, col_type, west, 3, cart_comm,
                  MPI_STATUS_IGNORE);
+    tempo_comm += MPI_Wtime() - inicio_tempo_comunicacao;
 
     // 3. Calculo da convolucao 3x3 no subdominio local
     for (int y = ly_begin; y <= ly_end; y++) {
@@ -141,7 +144,9 @@ int main(int argc, char **argv) {
   double t1 = MPI_Wtime();
   double local_time = t1 - t0;
   double max_time = 0.0;
+  double max_time_comm = 0.0;
   MPI_Reduce(&local_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, cart_comm);
+  MPI_Reduce(&tempo_comm, &max_time_comm, 1, MPI_DOUBLE, MPI_MAX, 0, cart_comm);
 
   // Soma local apenas das celulas reais do subdominio (sem contar o halo)
   double local_soma = 0.0;
@@ -155,8 +160,8 @@ int main(int argc, char **argv) {
   MPI_Reduce(&local_soma, &global_soma, 1, MPI_DOUBLE, MPI_SUM, 0, cart_comm);
 
   if (cart_rank == 0) {
-    printf("N=%d passes=%d  checksum=%.2f  tempo=%.6f s\n", N, P, global_soma,
-           max_time);
+    printf("N=%d\tpasses=%d\tprocs=%d\tchecksum=%.2f\ttempo=%.6f s\tcomunicação=%.6f s\n", N, P, world_size, global_soma,
+           max_time, max_time_comm);
   }
 
   MPI_Type_free(&col_type);
